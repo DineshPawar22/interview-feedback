@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JD2Query</title>
+    <!-- Load Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+      #model-loader {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        align-content: center;
+      }
+      .modal-body{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        align-content: center;
+      }
+      #out-put {
+        width:100%;
+        height:100%;
+      }
+      #model-responce{
+        width:100%;
+        height:100%;
+      }
+      #model-button{
+        display: none;
+      }
+      .toast {
+			position: fixed;
+			top: 10%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background-color: #333;
+			color: #fff;
+			padding: 16px;
+			border-radius: 5px;
+			z-index: 1;
+			opacity: 0;
+			transition: opacity 0.3s ease-in-out;
+		}
+
+		.toast.show {
+			opacity: 1;
+		}
+
+		.toast .close {
+			position: absolute;
+			top: 8px;
+			right: 8px;
+			color: #fff;
+			cursor: pointer;
+		}
+
+    </style>
+  </head>
+  <body>
+    <div class="container my-5">
+      <h1>Job Description to Query</h1>
+      <form>
+        <div class="form-group">
+          <label for="inputText">Enter Job Description:</label>
+          <textarea class="form-control" id="inputText" rows="8"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Submit</button>
+        <button type="submit" class="btn btn-primary" id="ClickeBtn">ClickMe</button>
+
+      </form>
+    </div>
+
+    <!-- Modal -->
+  <div class="modal fade" id="ModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLongTitle">Result</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div id = "model-responce">
+              <textarea type="text" class="form-control" id="out-put"></textarea>
+            </div>
+          
+            <div class="spinner-grow" role="status" id = "model-loader">
+              <!-- <span class="visually-hidden">Loading...</span> -->
+            </div>
+        </div>
+        <div class="modal-footer" id = "model-button">
+          <button type="button" class="btn btn-primary" id = "copyBtn">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+ <!-- toast -->
+  <div id="toast" class="toast">
+    <span class="close" onclick="hideToast()">&times;</span>
+    <label id="toastLbl"></label>
+  </div>
+
+    <!-- Load Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="./handleVtt.js"></script>
+    <script>
+      const showRes= (data)=>{
+        var outText = formatOutString(data).response
+        $('#model-loader').hide();
+        $('#model-responce').show();
+        $("#out-put").val(outText);
+        $('#model-button').show();
+
+      }
+      const loadDataInitial = ()=>{
+        $('#ModalCenter').modal({
+          keyboard: true,
+          show:true,
+        })
+        $('#model-responce').hide();
+        $('#model-button').hide();
+        $('#model-loader').show();
+      }
+
+      const formatInput = (text)=>{
+        return text.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '');
+      }
+
+      const formatOutString = (data)=>{
+        if(data.status == "success"){
+          let text =  data.response.replace(/\s\s+/g, '');
+          text = text.replace(/^\s+|\s+$|\s+(?=\s)/g, "");
+          var removeUnwanted = {"Query:" : "", "((":""}
+          for (let un in removeUnwanted){
+            text = text.replace(un , removeUnwanted[un])
+          }
+          data = {...data, response:text };
+          return data;
+
+        }else {
+          return data;
+        }
+      }
+
+      const apiKey = "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";
+      const modelId = "text-davinci-003";
+      const endpoint = "https://api.openai.com/v1/completions";
+
+      // Get the input text and submit button elements
+      const inputText = document.getElementById("inputText");
+      const submitBtn = document.getElementById("submitBtn");
+
+      ClickeBtn.addEventListener("click",(event) =>{
+        let text = inputText.value
+        sayHello(text)
+      })
+
+      // Add an event listener to the submit button
+      submitBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        let input = formatInput(inputText.value);
+
+        if(input.length < 20){
+          showToast ("Job Description is greater than 20 Char")
+          return
+        }
+
+        // Get the input text and create the request parameters
+        const propmt = "Write a  naukari search query for it skill only for below jd " + inputText.value;
+        const params = {
+          "model": modelId,
+          "prompt": propmt,
+          "temperature": 0.3,
+            "max_tokens": 120,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0
+        };
+
+ 
+        //load initial
+        loadDataInitial()
+
+        // Send the request to the OpenAI API using fetch()
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(params),
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Display the response
+            showRes({response : data.choices[0].text.toString(),status : "success"});
+           
+          })
+          .catch(error => {
+            // Display any errors in a toaster
+            showRes({response : JSON.stringify(error), status : "error"});
+          })
+          .finally(() => {
+            // Hide the spinner
+            // $('#ModalCenter').modal('hide')
+          });
+      });
+
+      // Add an event listener to the copy  button
+      copyBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+          // Get the text field
+          var copyText = document.getElementById("out-put");
+          // Select the text field
+          copyText.select();
+          copyText.setSelectionRange(0, 99999); // For mobile devices
+          // Copy the text inside the text field
+          navigator.clipboard.writeText(copyText.value);
+          // Copied text TOASTER
+          showToast("Copied the text: ");
+
+      })
+
+      const showToast = (msg) =>{
+			var toast = document.getElementById("toast");
+			toast.classList.add("show");
+      $("#toastLbl").html(msg);
+
+			setTimeout(function(){
+				toast.classList.remove("show");
+			}, 3000);
+		}
+
+    const hideToast =()=> {
+			var toast = document.getElementById("toast");
+			toast.classList.remove("show");
+		}
+ 
+    </script>
+  </body>
+</html>
