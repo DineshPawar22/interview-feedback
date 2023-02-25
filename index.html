@@ -14,13 +14,20 @@
     <p>Selected file path: <span id="file-path"></span></p>
     <button id = "dummy">click me</button>
     <pre id="file-contents"></pre>
+    <script src="./chatGPTCall.js"></script>
     <script src="./handleVtt.js"></script>
     
     <script>
         let data = ""
         document.getElementById("dummy").addEventListener("click",()=>{
-            console.log(data)
-            formatInput(data)
+
+          // callChatGPTApi("Hello " + "GG").then(userData => alert(userData))
+          //                               .catch(error => alert(error));
+           
+          getCanInterName()
+         
+            // let outputData = formatInput(data)
+            // console.log(outputData)
         })
       const dropzone = document.getElementById('dropzone');
       dropzone.addEventListener('dragover', function(e) {
